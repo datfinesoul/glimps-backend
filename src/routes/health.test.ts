@@ -1,9 +1,8 @@
-process.env.MEDIA_STORAGE_PATH = "/tmp/test-media";
-
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { env } from "../env.js";
+import { healthRoute } from "./health.js";
 
 describe("CORS configuration", () => {
   let app: FastifyInstance;
@@ -67,5 +66,45 @@ describe("CORS configuration", () => {
 
     expect(response1.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
     expect(response2.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
+  });
+});
+
+describe("health route", () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = Fastify({ logger: false });
+    await app.register(healthRoute);
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns 200 with status and timestamp", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/health",
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.status).toBe("ok");
+    expect(body.timestamp).toBeDefined();
+    expect(new Date(body.timestamp).toString()).not.toBe("Invalid Date");
+  });
+
+  it("response matches schema", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/health",
+    });
+
+    const body = JSON.parse(response.body);
+    expect(body).toHaveProperty("status");
+    expect(body).toHaveProperty("timestamp");
+    expect(typeof body.status).toBe("string");
+    expect(body.status).toBe("ok");
   });
 });
