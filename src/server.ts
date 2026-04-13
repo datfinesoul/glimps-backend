@@ -1,10 +1,22 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import pino from "pino";
 import { loggerConfig } from "./logger.js";
 import { env } from "./env.js";
 import { healthRoute } from "./routes/health.js";
+import { initTelemetry, shutdownTelemetry } from "./telemetry/index.js";
+
+const fatalLog = pino({
+  level: "fatal",
+  transport:
+    env.NODE_ENV === "development"
+      ? { target: "pino/file", options: { destination: 1 } }
+      : undefined,
+});
 
 async function start(): Promise<void> {
+  initTelemetry();
+
   const app = Fastify({
     logger: loggerConfig,
     requestIdHeader: "x-request-id",
@@ -29,6 +41,7 @@ async function start(): Promise<void> {
   const shutdown = async (signal: string) => {
     app.log.info({ signal }, "shutting down");
     await app.close();
+    await shutdownTelemetry();
     process.exit(0);
   };
 
@@ -37,6 +50,6 @@ async function start(): Promise<void> {
 }
 
 start().catch((err) => {
-  console.error("fatal:", err);
+  fatalLog.fatal({ err }, "fatal error starting server");
   process.exit(1);
 });

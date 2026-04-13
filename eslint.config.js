@@ -7,4 +7,9 @@ export default tseslint.config(
   {
     ignores: ["dist/", "drizzle/"],
   },
+  {
+    rules: {
+      "no-console": "error",
+    },
+  },
 );
