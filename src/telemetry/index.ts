@@ -4,6 +4,7 @@ import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { env } from "../env.js";
 
 let sdk: NodeSDK | undefined;
@@ -21,6 +22,11 @@ export function initTelemetry(): void {
     resource: new Resource({
       [ATTR_SERVICE_NAME]: env.OTEL_SERVICE_NAME,
     }),
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        "@opentelemetry/instrumentation-fs": { enabled: false },
+      }),
+    ],
     traceExporter,
     metricReader: new PeriodicExportingMetricReader({
       exporter: metricExporter,
