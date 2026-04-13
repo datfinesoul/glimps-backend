@@ -24,7 +24,12 @@ async function start(): Promise<void> {
     genReqId: () => crypto.randomUUID(),
   });
 
-  await app.register(cors, { origin: true });
+  const allowedOrigins = env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
+
+  await app.register(cors, {
+    origin: allowedOrigins,
+    credentials: true,
+  });
 
   app.register(healthRoute);
 

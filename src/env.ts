@@ -24,4 +24,8 @@ export const env = {
   OTEL_SERVICE_NAME: optional("OTEL_SERVICE_NAME", "glimps-backend"),
 
   MEDIA_STORAGE_PATH: required("MEDIA_STORAGE_PATH"),
+
+  ALLOWED_ORIGINS: optional("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"),
 } as const;
+
+export type Env = typeof env;
