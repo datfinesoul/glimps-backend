@@ -1,5 +1,4 @@
 import Fastify from "fastify";
-import { requestContext } from "@fastify/request-context";
 import cors from "@fastify/cors";
 import { loggerConfig } from "./logger.js";
 import { env } from "./env.js";
@@ -13,7 +12,6 @@ async function start(): Promise<void> {
     genReqId: () => crypto.randomUUID(),
   });
 
-  await app.register(requestContext);
   await app.register(cors, { origin: true });
 
   app.register(healthRoute);
