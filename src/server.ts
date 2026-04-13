@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import pino from "pino";
 import { loggerConfig } from "./logger.js";
 import { env } from "./env.js";
@@ -29,6 +30,12 @@ async function start(): Promise<void> {
   await app.register(cors, {
     origin: allowedOrigins,
     credentials: true,
+  });
+
+  await app.register(rateLimit, {
+    global: true,
+    max: env.RATE_LIMIT_MAX,
+    timeWindow: env.RATE_LIMIT_TIME_WINDOW_MS,
   });
 
   app.register(healthRoute);

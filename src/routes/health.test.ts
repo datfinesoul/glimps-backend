@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import { env } from "../env.js";
 import { healthRoute } from "./health.js";
 
@@ -106,5 +107,66 @@ describe("health route", () => {
     expect(body).toHaveProperty("timestamp");
     expect(typeof body.status).toBe("string");
     expect(body.status).toBe("ok");
+  });
+});
+
+describe("rate limiting", () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = Fastify({ logger: false });
+    await app.register(rateLimit, {
+      global: true,
+      max: 5,
+      timeWindow: 60000,
+    });
+    app.get("/under-limit", async () => ({ ok: true }));
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("allows requests under the limit", async () => {
+    for (let i = 0; i < 3; i++) {
+      const response = await app.inject({
+        method: "GET",
+        url: "/under-limit",
+      });
+      expect(response.statusCode).toBe(200);
+    }
+  });
+});
+
+describe("rate limiting > 429", () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = Fastify({ logger: false });
+    await app.register(rateLimit, {
+      global: true,
+      max: 3,
+      timeWindow: 60000,
+    });
+    app.get("/test", async () => ({ ok: true }));
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("blocks requests over the limit with 429", async () => {
+    for (let i = 0; i < 3; i++) {
+      await app.inject({ method: "GET", url: "/test" });
+    }
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/test",
+    });
+
+    expect(response.statusCode).toBe(429);
   });
 });

@@ -26,6 +26,10 @@ export const env = {
   MEDIA_STORAGE_PATH: required("MEDIA_STORAGE_PATH"),
 
   ALLOWED_ORIGINS: optional("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"),
+
+  RATE_LIMIT_MAX: Number(optional("RATE_LIMIT_MAX", "100")),
+  RATE_LIMIT_TIME_WINDOW_MS: Number(optional("RATE_LIMIT_TIME_WINDOW_MS", "90000")),
+  RATE_LIMIT_AUTH_MAX: Number(optional("RATE_LIMIT_AUTH_MAX", "10")),
 } as const;
 
 export type Env = typeof env;
