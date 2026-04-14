@@ -15,13 +15,13 @@ npm install
 docker compose up -d
 
 # Run database migrations
-npm run db:push
+(. .env && npm run db:push)
 
 # Start dev server
-npm run dev
+(. .env && npm run dev)
 
 # Start worker (separate terminal)
-npm run dev:worker
+(. .env && npm run dev:worker)
 ```
 
 ## Services
@@ -52,6 +52,10 @@ Expected: `{"status":"ok","timestamp":"..."}`
 ### Infrastructure
 
 ```bash
+# View logs
+docker compose logs -f
+
+# Health checks
 docker exec glimps_backend_postgres pg_isready -U glimps -d glimps
 docker exec glimps_backend_redis redis-cli ping
 ```
