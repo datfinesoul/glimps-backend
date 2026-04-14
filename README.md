@@ -15,13 +15,13 @@ npm install
 docker compose up -d
 
 # Run database migrations
-(. .env && npm run db:push)
+(set -a && . .env && npm run db:push)
 
 # Start dev server
-(. .env && npm run dev)
+(set -a && . .env && npm run dev)
 
 # Start worker (separate terminal)
-(. .env && npm run dev:worker)
+(set -a && . .env && npm run dev:worker)
 ```
 
 ## Services
