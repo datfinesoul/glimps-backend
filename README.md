@@ -9,19 +9,19 @@ Node.js API + BullMQ workers for the Glimps image library.
 cp .env.example .env
 
 # Install dependencies
-npm install
+pnpm install
 
 # Start infrastructure
 docker compose up -d
 
 # Run database migrations
-(set -a && . .env && npm run db:push)
+(set -a && . .env && pnpm run db:push)
 
 # Start dev server
-(set -a && . .env && npm run dev)
+(set -a && . .env && pnpm run dev)
 
 # Start worker (separate terminal)
-(set -a && . .env && npm run dev:worker)
+(set -a && . .env && pnpm run dev:worker)
 ```
 
 ## Services
@@ -38,7 +38,7 @@ docker compose up -d
 
 - **node** >= 22
 - **docker** — run postgres + redis locally
-- **npm** — install dependencies
+- **pnpm** — install dependencies
 
 ### Health Check
 
@@ -63,15 +63,15 @@ docker exec glimps_backend_redis redis-cli ping
 ### Lint / Typecheck / Test
 
 ```bash
-npm run lint
-npm run typecheck
-npm run test
+pnpm run lint
+pnpm run typecheck
+pnpm run test
 ```
 
 ## Production
 
 ```bash
-npm run build
+pnpm run build
 pm2 start ecosystem.config.js
 ```
 
