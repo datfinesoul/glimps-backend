@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: glimps_backend_postgres
+    container_name: glimps-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-glimps}
       POSTGRES_USER: ${POSTGRES_USER:-glimps}
@@ -17,10 +17,12 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - glimps-network
 
   redis:
     image: redis:7-alpine
-    container_name: glimps_backend_redis
+    container_name: glimps-redis
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -33,9 +35,81 @@ services:
       retries: 5
       start_period: 5s
     restart: unless-stopped
+    networks:
+      - glimps-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: glimps-api
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://${POSTGRES_USER:-glimps}:${POSTGRES_PASSWORD:-glimps}@postgres:5432/${POSTGRES_DB:-glimps}
+      REDIS_URL: redis://redis:6379
+      MEDIA_STORAGE_PATH: /app/media
+      OTEL_SERVICE_NAME: glimps-api
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      RATE_LIMIT_TIME_WINDOW_MS: ${RATE_LIMIT_TIME_WINDOW_MS:-90000}
+    volumes:
+      - glimps-media:/app/media
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: on-failure
+    networks:
+      - glimps-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: glimps-worker
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgres://${POSTGRES_USER:-glimps}:${POSTGRES_PASSWORD:-glimps}@postgres:5432/${POSTGRES_DB:-glimps}
+      REDIS_URL: redis://redis:6379
+      MEDIA_STORAGE_PATH: /app/media
+      OTEL_SERVICE_NAME: glimps-worker
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - glimps-media:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -h redis ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - glimps-network
 
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
+  glimps-media:
+    driver: local
+
+networks:
+  glimps-network:
+    driver: bridge
