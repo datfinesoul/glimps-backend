@@ -91,7 +91,7 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
     try {
       const storedFileName = generateFileName(fileName);
       storedPath = originalPath(hardcodedUserId, storedFileName);
-      thumbPath = thumbnailPath(hardcodedUserId, storedFileName.replace(/\.[^.]+$/, ".jpg"));
+      thumbPath = thumbnailPath(hardcodedUserId, storedFileName.replace(/\.[^.]+$/, ".webp"));
 
       await ensureDir(path.dirname(storedPath));
       await fs.writeFile(storedPath, buffer);
