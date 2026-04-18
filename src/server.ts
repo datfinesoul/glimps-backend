@@ -7,6 +7,7 @@ import { loggerConfig } from "./logger.js";
 import { env } from "./env.js";
 import { healthRoute } from "./routes/health.js";
 import { uploadRoute } from "./routes/upload.js";
+import { mediaRoute } from "./routes/media.js";
 import { initTelemetry, shutdownTelemetry } from "./telemetry/index.js";
 
 const fatalLog = pino({
@@ -48,6 +49,7 @@ async function start(): Promise<void> {
 
   app.register(healthRoute);
   app.register(uploadRoute);
+  app.register(mediaRoute);
 
   app.addHook("onRequest", async (request) => {
     request.log.info(
