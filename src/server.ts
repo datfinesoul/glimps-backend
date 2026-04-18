@@ -1,10 +1,12 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import multipart from "@fastify/multipart";
 import pino from "pino";
 import { loggerConfig } from "./logger.js";
 import { env } from "./env.js";
 import { healthRoute } from "./routes/health.js";
+import { uploadRoute } from "./routes/upload.js";
 import { initTelemetry, shutdownTelemetry } from "./telemetry/index.js";
 
 const fatalLog = pino({
@@ -38,7 +40,14 @@ async function start(): Promise<void> {
     timeWindow: env.RATE_LIMIT_TIME_WINDOW_MS,
   });
 
+  await app.register(multipart, {
+    limits: {
+      fileSize: 500 * 1024 * 1024,
+    },
+  });
+
   app.register(healthRoute);
+  app.register(uploadRoute);
 
   app.addHook("onRequest", async (request) => {
     request.log.info(

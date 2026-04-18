@@ -1,85 +1,46 @@
 # Glimps Backend
 
-Node.js API + BullMQ workers for the Glimps image library.
+Node.js API (Fastify) for the Glimps image library.
 
-## Quick Start
+## Development
 
+The harness repo (`glimps/`) runs all services via Docker Compose. See the harness [AGENTS.md](../AGENTS.md) for the standard development workflow.
+
+**Quick start via harness:**
 ```bash
-# Copy and configure environment
-cp .env.example .env
-
-# Install dependencies
-pnpm install
-
-# Start infrastructure
+cd glimps
 docker compose up -d
+docker compose exec api pnpm run db:push
+```
 
-# Run database migrations
-(set -a && . .env && pnpm run db:push)
-
-# Start dev server
+**Local iteration (debugging only):**
+```bash
+cp .env.example .env
+pnpm install
 (set -a && . .env && pnpm run dev)
-
-# Start worker (separate terminal)
-(set -a && . .env && pnpm run dev:worker)
 ```
 
-## Services
+## Commands
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| API | 3000 | Fastify HTTP server |
-| PostgreSQL | 5432 | Primary database |
-| Redis | 6379 | Job queue (BullMQ) |
+| Command | Context | Purpose |
+|---------|---------|---------|
+| `pnpm run lint` | docker exec or local | ESLint |
+| `pnpm run typecheck` | docker exec or local | TypeScript |
+| `pnpm run test` | docker exec or local | Vitest |
+| `pnpm run db:push` | docker exec only | Push schema to database |
+| `pnpm run build` | docker exec or local | tsc → dist/ |
 
-## Testing "Works at All"
+**CI order**: lint → typecheck → test
 
-### Tool Requirements
+## Entry Point
 
-- **node** >= 22
-- **docker** — run postgres + redis locally
-- **pnpm** — install dependencies
+`src/server.ts` — Fastify HTTP server (port 3000)
 
-### Health Check
+## Stack
 
-```bash
-# Server must be running
-curl http://localhost:3000/api/health
-```
-
-Expected: `{"status":"ok","timestamp":"..."}`
-
-### Infrastructure
-
-```bash
-# View logs
-docker compose logs -f
-
-# Health checks
-docker exec glimps_backend_postgres pg_isready -U glimps -d glimps
-docker exec glimps_backend_redis redis-cli ping
-```
-
-### Lint / Typecheck / Test
-
-```bash
-pnpm run lint
-pnpm run typecheck
-pnpm run test
-```
-
-## Production
-
-```bash
-pnpm run build
-pm2 start ecosystem.config.js
-```
-
-Two processes: `glimps-web` (HTTP) and `glimps-worker` (BullMQ).
-
-## Stopping
-
-```bash
-docker compose down        # preserve data
-docker compose down -v     # destroy data
-```
+- Fastify + TypeScript
+- Drizzle ORM + postgres
+- BullMQ (via Redis)
+- Pino (structured logging)
+- OpenTelemetry (metrics + tracing)
+- @fastify/multipart (file uploads)
