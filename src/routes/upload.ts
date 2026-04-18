@@ -2,7 +2,7 @@ import { trace, metrics, SpanStatusCode } from "@opentelemetry/api";
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/index.js";
 import { media } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { enqueueThumbnailJob } from "../services/queue.js";
 import { originalPath, thumbnailPath, mediaShardPath } from "../services/storage.js";
 import * as fs from "fs/promises";
@@ -73,6 +73,27 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
           "media.file_name": fileName,
           "media.file_size": fileSize,
         });
+
+        const [existing] = await db
+          .select({ id: media.id })
+          .from(media)
+          .where(
+            and(
+              eq(media.userId, hardcodedUserId),
+              eq(media.fileName, fileName),
+              eq(media.fileSize, fileSize),
+              isNull(media.deletedAt)
+            )
+          );
+
+        if (existing) {
+          fileSpan.setAttributes({ "media.duplicate": true });
+          fileSpan.setStatus({ code: SpanStatusCode.OK });
+          fileSpan.end();
+          request.log.info({ mediaId: existing.id, fileName }, "duplicate upload skipped");
+          errors.push({ fileName, error: "duplicate" });
+          continue;
+        }
 
         let storedPath: string;
         let thumbPath: string;

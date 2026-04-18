@@ -37,6 +37,7 @@ export const media = pgTable(
     index("media_status_idx").on(table.status),
     index("media_created_at_idx").on(table.createdAt),
     index("media_deleted_at_idx").on(table.deletedAt),
+    index("media_dedup_idx").on(table.userId, table.fileName, table.fileSize),
   ]
 );
 
