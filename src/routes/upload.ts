@@ -43,7 +43,7 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
 
     try {
       const parts = request.parts();
-      const results: Array<{ id: string; status: string }> = [];
+      const results: Array<{ id: string; status: string; fileName?: string }> = [];
       const errors: Array<{ fileName: string; error: string }> = [];
 
       for await (const part of parts) {
@@ -91,7 +91,7 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
           fileSpan.setStatus({ code: SpanStatusCode.OK });
           fileSpan.end();
           request.log.info({ mediaId: existing.id, fileName }, "duplicate upload skipped");
-          errors.push({ fileName, error: "duplicate" });
+          results.push({ id: existing.id, status: "duplicate", fileName });
           continue;
         }
 
@@ -176,7 +176,8 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
         results.push({ id: mediaRecord.id, status: mediaRecord.status });
       }
 
-      if (results.length === 0 && errors.length > 0) {
+      const hasSuccess = results.some((r) => r.status === "success");
+      if (!hasSuccess && errors.length > 0) {
         return reply.status(400).send({ error: "all uploads failed", details: errors });
       }
 
