@@ -2,8 +2,17 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../db/index.js";
 import { media } from "../db/schema.js";
 import { eq, and, isNull, desc } from "drizzle-orm";
+import { env } from "../env.js";
 
 const hardcodedUserId = "00000000-0000-0000-0000-000000000000";
+
+function toUrlPath(filesystemPath: string | null): string | null {
+  if (!filesystemPath) return null;
+  const normalizedPath = filesystemPath.replace(/\\/g, "/");
+  const urlPath = normalizedPath.replace(env.MEDIA_STORAGE_PATH, "");
+  const cleanPath = urlPath.startsWith("/") ? urlPath : `/${urlPath}`;
+  return `/media${cleanPath}`;
+}
 
 interface MediaListQuery {
   page?: number;
@@ -96,7 +105,11 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .offset(offset);
 
     const response: MediaListResponse = {
-      data: rows,
+      data: rows.map((row) => ({
+        ...row,
+        thumbnailPath: toUrlPath(row.thumbnailPath),
+        previewPath: toUrlPath(row.previewPath),
+      })),
       pagination: {
         page,
         limit,
@@ -143,6 +156,10 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
 
     const response: MediaDetailResponse = {
       ...row,
+      originalPath: toUrlPath(row.originalPath),
+      thumbnailPath: toUrlPath(row.thumbnailPath),
+      previewPath: toUrlPath(row.previewPath),
+      animatedThumbnailPath: toUrlPath(row.animatedThumbnailPath),
       metadata: (row.metadata as Record<string, unknown>) ?? {},
     };
     return reply.send(response);

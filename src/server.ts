@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
 import pino from "pino";
 import { loggerConfig } from "./logger.js";
 import { env } from "./env.js";
@@ -45,6 +46,12 @@ async function start(): Promise<void> {
     limits: {
       fileSize: 500 * 1024 * 1024,
     },
+  });
+
+  await app.register(fastifyStatic, {
+    prefix: "/media/",
+    root: env.MEDIA_STORAGE_PATH,
+    decorateReply: false,
   });
 
   app.register(healthRoute);
