@@ -6,9 +6,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
-    "dev:worker": "tsx watch src/worker.ts",
     "start": "node dist/server.js",
-    "start:worker": "node dist/worker.js",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
