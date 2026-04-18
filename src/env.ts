@@ -30,6 +30,7 @@ export const env = {
   RATE_LIMIT_MAX: Number(optional("RATE_LIMIT_MAX", "100")),
   RATE_LIMIT_TIME_WINDOW_MS: Number(optional("RATE_LIMIT_TIME_WINDOW_MS", "90000")),
   RATE_LIMIT_AUTH_MAX: Number(optional("RATE_LIMIT_AUTH_MAX", "10")),
+  RATE_LIMIT_UPLOAD_MAX: Number(optional("RATE_LIMIT_UPLOAD_MAX", "500")),
 } as const;
 
 export type Env = typeof env;

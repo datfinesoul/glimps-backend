@@ -38,7 +38,7 @@ async function start(): Promise<void> {
 
   await app.register(rateLimit, {
     global: true,
-    max: env.RATE_LIMIT_MAX,
+    max: Math.max(env.RATE_LIMIT_MAX, env.RATE_LIMIT_UPLOAD_MAX),
     timeWindow: env.RATE_LIMIT_TIME_WINDOW_MS,
   });
 
