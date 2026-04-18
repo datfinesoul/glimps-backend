@@ -58,14 +58,14 @@ docker compose exec postgres psql -U glimps -d glimps
 -- List all media
 SELECT id, file_name, status, thumbnail_path, created_at FROM media;
 
--- Reset all thumbnails for regeneration (e.g., after format change)
-UPDATE media SET thumbnail_path = NULL, status = 'pending' WHERE deleted_at IS NULL;
-
 -- View jobs queue
 SELECT id, media_id, type, status, attempts, error FROM jobs ORDER BY created_at DESC LIMIT 20;
 
--- Clear stuck/failed jobs
-DELETE FROM jobs WHERE status = 'failed';
+-- Clear all jobs (stuck or otherwise)
+DELETE FROM jobs;
+
+-- Delete all media and files (start fresh - requires deleting thumbnail/original files too)
+DELETE FROM media;
 ```
 
 ### File Storage
@@ -74,8 +74,9 @@ DELETE FROM jobs WHERE status = 'failed';
 # View media storage (thumbnails, originals)
 docker compose exec api ls -la /app/media/
 
-# Delete all thumbnails (force regeneration)
+# Delete all media files (when starting fresh)
 docker compose exec api rm -rf /app/media/thumbnails/*
+docker compose exec api rm -rf /app/media/originals/*
 ```
 
 ### Worker Logs
