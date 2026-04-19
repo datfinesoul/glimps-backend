@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/index.js";
 import { media } from "../db/schema.js";
-import { eq, and, isNull, desc, count } from "drizzle-orm";
+import { eq, and, isNull, desc, count, gte, lte } from "drizzle-orm";
 import { env } from "../env.js";
 
 const hardcodedUserId = "00000000-0000-0000-0000-000000000000";
@@ -17,6 +17,9 @@ function toUrlPath(filesystemPath: string | null): string | null {
 interface MediaListQuery {
   page?: number;
   limit?: number;
+  type?: "image" | "video";
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface MediaListResponse {
@@ -68,11 +71,34 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
     const limit = Math.min(100, Math.max(1, request.query.limit ?? 30));
     const offset = (page - 1) * limit;
 
-    const whereClause = and(
+    const conditions = [
       eq(media.userId, hardcodedUserId),
       eq(media.status, "ready"),
-      isNull(media.deletedAt)
-    );
+      isNull(media.deletedAt),
+    ];
+
+    if (request.query.type === "image") {
+      conditions.push(eq(media.type, "image"));
+    } else if (request.query.type === "video") {
+      conditions.push(eq(media.type, "video"));
+    }
+
+    if (request.query.dateFrom) {
+      const from = new Date(request.query.dateFrom);
+      if (!isNaN(from.getTime())) {
+        conditions.push(gte(media.createdAt, from));
+      }
+    }
+
+    if (request.query.dateTo) {
+      const to = new Date(request.query.dateTo);
+      if (!isNaN(to.getTime())) {
+        to.setHours(23, 59, 59, 999);
+        conditions.push(lte(media.createdAt, to));
+      }
+    }
+
+    const whereClause = and(...conditions);
 
     const totalCountResult = await db
       .select({ count: count() })
