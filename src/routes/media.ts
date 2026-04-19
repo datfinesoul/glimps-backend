@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/index.js";
 import { media } from "../db/schema.js";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, count } from "drizzle-orm";
 import { env } from "../env.js";
 
 const hardcodedUserId = "00000000-0000-0000-0000-000000000000";
@@ -75,7 +75,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
     );
 
     const totalCountResult = await db
-      .select({ count: media.id })
+      .select({ count: count() })
       .from(media)
       .where(whereClause);
 
