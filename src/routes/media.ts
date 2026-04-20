@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/index.js";
-import { media } from "../db/schema.js";
+import { media, jobs } from "../db/schema.js";
 import { eq, and, isNull, isNotNull, desc, count, gte, lte, ilike } from "drizzle-orm";
 import { env } from "../env.js";
 import { unlink } from "fs/promises";
@@ -448,11 +448,9 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       return reply.status(404).send({ error: "media not found" });
     }
 
+    await db.delete(jobs).where(eq(jobs.mediaId, id));
     await deleteMediaFiles(row);
-
-    await db
-      .delete(media)
-      .where(eq(media.id, id));
+    await db.delete(media).where(eq(media.id, id));
 
     return reply.status(204).send();
   });
@@ -474,11 +472,9 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .from(media)
       .where(whereClause);
 
+    await Promise.all(rows.map((row) => db.delete(jobs).where(eq(jobs.mediaId, row.id))));
     await Promise.all(rows.map((row) => deleteMediaFiles(row)));
-
-    await db
-      .delete(media)
-      .where(whereClause);
+    await db.delete(media).where(whereClause);
 
     return reply.status(204).send();
   });
