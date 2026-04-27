@@ -6,28 +6,47 @@ import { jobs } from "../db/schema.js";
 export const thumbnailQueueName = "thumbnail";
 export const videoQueueName = "video";
 
+const queueConnection = { url: env.REDIS_URL };
+
+export const thumbnailQueue = new Queue<{
+  jobId: string;
+  mediaId: string;
+  originalPath: string;
+  thumbnailPath: string;
+}>(thumbnailQueueName, {
+  connection: queueConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 2000 },
+    removeOnComplete: { count: 100 },
+    removeOnFail: { count: 500 },
+  },
+});
+
+export const videoQueue = new Queue<{
+  jobId: string;
+  mediaId: string;
+  originalPath: string;
+  thumbnailPath: string;
+  animatedThumbnailPath: string;
+  previewPath: string;
+  gpuEnabled: boolean;
+}>(videoQueueName, {
+  connection: queueConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 2000 },
+    removeOnComplete: { count: 100 },
+    removeOnFail: { count: 500 },
+  },
+});
+
 export function createThumbnailQueue(): Queue {
-  return new Queue(thumbnailQueueName, {
-    connection: { url: env.REDIS_URL },
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: { type: "exponential", delay: 2000 },
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 500 },
-    },
-  });
+  return thumbnailQueue;
 }
 
 export function createVideoQueue(): Queue {
-  return new Queue(videoQueueName, {
-    connection: { url: env.REDIS_URL },
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: { type: "exponential", delay: 2000 },
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 500 },
-    },
-  });
+  return videoQueue;
 }
 
 export async function enqueueThumbnailJob(
