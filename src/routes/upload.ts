@@ -8,8 +8,6 @@ import { originalPath, thumbnailPath, mediaShardPath } from "../services/storage
 import * as fs from "fs/promises";
 import * as path from "path";
 
-const hardcodedUserId = "00000000-0000-0000-0000-000000000000";
-
 const tracer = trace.getTracer("glimps-api");
 const meter = metrics.getMeter("glimps-api");
 
@@ -39,7 +37,7 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
     const span = tracer.startSpan("media.upload");
     const startTime = Date.now();
 
-    span.setAttributes({ "upload.user_id": hardcodedUserId });
+    span.setAttributes({ "upload.user_id": request.userId });
 
     try {
       const parts = request.parts();
@@ -79,7 +77,7 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
           .from(media)
           .where(
             and(
-              eq(media.userId, hardcodedUserId),
+              eq(media.userId, request.userId),
               eq(media.fileName, fileName),
               eq(media.fileSize, fileSize),
               isNull(media.deletedAt)
@@ -100,8 +98,8 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
 
         try {
           const storedFileName = generateFileName(fileName);
-          storedPath = originalPath(hardcodedUserId, storedFileName);
-          thumbPath = thumbnailPath(hardcodedUserId, storedFileName.replace(/\.[^.]+$/, ".webp"));
+          storedPath = originalPath(request.userId, storedFileName);
+          thumbPath = thumbnailPath(request.userId, storedFileName.replace(/\.[^.]+$/, ".webp"));
 
           await ensureDir(path.dirname(storedPath));
           await fs.writeFile(storedPath, buffer);
@@ -120,7 +118,7 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
           [mediaRecord] = await db
             .insert(media)
             .values({
-              userId: hardcodedUserId,
+              userId: request.userId,
               originalPath: storedPath,
               thumbnailPath: null,
               status: "pending",
@@ -128,7 +126,7 @@ export async function uploadRoute(app: FastifyInstance): Promise<void> {
               fileName,
               mimeType,
               fileSize,
-              shardPath: mediaShardPath(hardcodedUserId),
+              shardPath: mediaShardPath(request.userId),
               metadata: {},
             })
             .returning();

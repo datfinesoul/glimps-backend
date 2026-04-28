@@ -5,8 +5,6 @@ import { eq, and, isNull, isNotNull, desc, count, gte, lte, ilike } from "drizzl
 import { env } from "../env.js";
 import { unlink } from "fs/promises";
 
-const hardcodedUserId = "00000000-0000-0000-0000-000000000000";
-
 function toUrlPath(filesystemPath: string | null): string | null {
   if (!filesystemPath) return null;
   const normalizedPath = filesystemPath.replace(/\\/g, "/");
@@ -104,7 +102,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
     const offset = (page - 1) * limit;
 
     const conditions = [
-      eq(media.userId, hardcodedUserId),
+      eq(media.userId, request.userId),
       eq(media.status, "ready"),
       isNull(media.deletedAt),
     ];
@@ -204,7 +202,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .from(media)
       .where(and(
         eq(media.id, id),
-        eq(media.userId, hardcodedUserId),
+        eq(media.userId, request.userId),
         isNull(media.deletedAt)
       ));
 
@@ -236,7 +234,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
     const searchPattern = `%${q.trim()}%`;
 
     const conditions = [
-      eq(media.userId, hardcodedUserId),
+      eq(media.userId, request.userId),
       eq(media.status, "ready"),
       isNull(media.deletedAt),
       ilike(media.fileName, searchPattern),
@@ -320,7 +318,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .from(media)
       .where(and(
         eq(media.id, id),
-        eq(media.userId, hardcodedUserId),
+        eq(media.userId, request.userId),
         isNull(media.deletedAt)
       ));
 
@@ -333,7 +331,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .set({ deletedAt: new Date() })
       .where(and(
         eq(media.id, id),
-        eq(media.userId, hardcodedUserId)
+        eq(media.userId, request.userId)
       ));
 
     return reply.status(204).send();
@@ -347,7 +345,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .from(media)
       .where(and(
         eq(media.id, id),
-        eq(media.userId, hardcodedUserId),
+        eq(media.userId, request.userId),
         isNotNull(media.deletedAt)
       ));
 
@@ -360,7 +358,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .set({ deletedAt: null })
       .where(and(
         eq(media.id, id),
-        eq(media.userId, hardcodedUserId)
+        eq(media.userId, request.userId)
       ));
 
     return reply.status(204).send();
@@ -372,7 +370,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
     const offset = (page - 1) * limit;
 
     const whereClause = and(
-      eq(media.userId, hardcodedUserId),
+      eq(media.userId, request.userId),
       isNotNull(media.deletedAt)
     );
 
@@ -440,7 +438,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
       .from(media)
       .where(and(
         eq(media.id, id),
-        eq(media.userId, hardcodedUserId),
+        eq(media.userId, request.userId),
         isNotNull(media.deletedAt)
       ));
 
@@ -459,7 +457,7 @@ export async function mediaRoute(app: FastifyInstance): Promise<void> {
 
   app.delete("/api/media/trash", async (request, reply) => {
     const whereClause = and(
-      eq(media.userId, hardcodedUserId),
+      eq(media.userId, request.userId),
       isNotNull(media.deletedAt)
     );
 

@@ -3,12 +3,15 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import multipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
+import fastifyCookie from "@fastify/cookie";
 import pino from "pino";
 import { loggerConfig } from "./logger.js";
 import { env } from "./env.js";
 import { healthRoute } from "./routes/health.js";
 import { uploadRoute } from "./routes/upload.js";
 import { mediaRoute } from "./routes/media.js";
+import { authRoute } from "./routes/auth.js";
+import { authPlugin } from "./plugins/auth.js";
 import { initTelemetry, shutdownTelemetry } from "./telemetry/index.js";
 
 const fatalLog = pino({
@@ -48,13 +51,18 @@ async function start(): Promise<void> {
     },
   });
 
+  await app.register(fastifyCookie);
+
   await app.register(fastifyStatic, {
     prefix: "/media/",
     root: env.MEDIA_STORAGE_PATH,
     decorateReply: false,
   });
 
+  await app.register(authPlugin);
+
   app.register(healthRoute);
+  app.register(authRoute);
   app.register(uploadRoute);
   app.register(mediaRoute);
 

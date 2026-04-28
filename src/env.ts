@@ -31,6 +31,8 @@ export const env = {
   RATE_LIMIT_TIME_WINDOW_MS: Number(optional("RATE_LIMIT_TIME_WINDOW_MS", "90000")),
   RATE_LIMIT_AUTH_MAX: Number(optional("RATE_LIMIT_AUTH_MAX", "10")),
   RATE_LIMIT_UPLOAD_MAX: Number(optional("RATE_LIMIT_UPLOAD_MAX", "500")),
+
+  JWT_SECRET: required("JWT_SECRET"),
 } as const;
 
 export type Env = typeof env;
